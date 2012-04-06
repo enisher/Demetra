@@ -56,7 +56,6 @@
             <url>https://repository.cloudera.com/artifactory/libs-release</url>
         </repository>
         <repository>
-            <snapshots />
             <id>snapshots</id>
             <name>libs-snapshot</name>
             <url>https://repository.cloudera.com/artifactory/libs-snapshot</url>
