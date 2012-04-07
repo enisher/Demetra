@@ -36,4 +36,13 @@ public class Chromosome {
 	public ActivationFunction getActivationFunction() {
 		return activationFunction.clone();
 	}
+
+    @Override
+    public String toString() {
+        return "Chromosome{" +
+                "layerCount=" + layerCount +
+                ", neuronsDensity=" + neuronsDensity +
+                ", activationFunction=" + activationFunction +
+                '}';
+    }
 }
