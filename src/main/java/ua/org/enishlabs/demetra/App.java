@@ -20,21 +20,19 @@ import org.encog.engine.network.activation.ActivationFunction;
 import org.encog.engine.network.activation.ActivationSigmoid;
 import org.encog.engine.network.activation.ActivationTANH;
 import org.encog.ml.data.basic.BasicMLData;
-import org.encog.ml.data.basic.BasicMLDataSet;
 import org.encog.neural.networks.BasicNetwork;
 import org.encog.neural.networks.layers.BasicLayer;
-import org.encog.neural.networks.training.Train;
-import org.encog.neural.networks.training.propagation.back.Backpropagation;
 import ua.org.enishlabs.demetra.genetic.Chromosome;
 import ua.org.enishlabs.demetra.genetic.ChromosomeRate;
-import ua.org.enishlabs.demetra.genetic.FitnessFunction;
+import ua.org.enishlabs.demetra.genetic.RateFunction;
+import ua.org.enishlabs.demetra.genetic.Trainer;
 
 import java.io.IOException;
 import java.util.*;
 
 public class App extends Configured implements Tool {
-    private static double[][] input = {{0., 0.}, {0., 1.}, {1., 0.}, {1., 1.}};
-    private static double[][] ideal = {{0.}, {1.}, {1.}, {0.}};
+    public static double[][] input = {{0., 0.}, {0., 1.}, {1., 0.}, {1., 1.}};
+    public static double[][] ideal = {{0.}, {1.}, {1.}, {0.}};
     private static final int POPULATION_SIZE = 10;
     private static final Random r = new Random();
 
@@ -183,25 +181,9 @@ public class App extends Configured implements Tool {
      * @return error
      */
     private static double train(BasicNetwork network) {
-        return new FitnessFunction().evaluate(trainer(network));
+        return new RateFunction().evaluate(new Trainer().train(network));
     }
 
-    private static double trainer(BasicNetwork network) {
-        final Train train = new Backpropagation(network, new BasicMLDataSet(input, ideal));
-
-        int iteration = 0;
-
-        do {
-            train.iteration();
-            if (iteration % 2000 == 0) {
-                System.out.println("Iteration #" + iteration + " Error:" + train.getError());
-            }
-            iteration++;
-        } while ((iteration < 7000) && (train.getError() > 0.05));
-
-        System.out.println("Iteration #" + iteration + " Error:" + train.getError());
-        return train.getError();
-    }
 
 
     private static ActivationFunction choseActivationFunction(Random r) {
