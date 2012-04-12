@@ -22,10 +22,7 @@ import org.encog.engine.network.activation.ActivationTANH;
 import org.encog.ml.data.basic.BasicMLData;
 import org.encog.neural.networks.BasicNetwork;
 import org.encog.neural.networks.layers.BasicLayer;
-import ua.org.enishlabs.demetra.genetic.Chromosome;
-import ua.org.enishlabs.demetra.genetic.ChromosomeRate;
-import ua.org.enishlabs.demetra.genetic.RateFunction;
-import ua.org.enishlabs.demetra.genetic.Trainer;
+import ua.org.enishlabs.demetra.genetic.*;
 
 import java.io.IOException;
 import java.util.*;
@@ -80,7 +77,7 @@ public class App extends Configured implements Tool {
     private static void prepareNextPopulation(List<Chromosome> population, List<ChromosomeRate> rates) {
         //Update population
         Collections.sort(rates);
-        final List<Chromosome> nextPopulation = filterToNextGeneration(rates);
+        final List<Chromosome> nextPopulation = new SurviveStrategy().filter(rates);
         while (nextPopulation.size() < POPULATION_SIZE) {
             if (r.nextDouble() < .8) {
                 final Chromosome a = population.get(r.nextInt(population.size()));
@@ -94,6 +91,42 @@ public class App extends Configured implements Tool {
             }
         }
     }
+
+  private static Chromosome mutation(Chromosome a) {
+    return new Chromosome(a.getLayerCount() + r.nextInt(10) - 5, a.getNeuronsDensity(), a.getActivationFunction());
+  }
+
+  private static Chromosome crossover(Chromosome a, Chromosome b) {
+    final int newLayerCount;
+    double v1 = r.nextDouble();
+    if (v1 < .3) {
+      newLayerCount = a.getLayerCount();
+    } else if (v1 < .6) {
+      newLayerCount = b.getLayerCount();
+    } else {
+      newLayerCount = (a.getLayerCount() + b.getLayerCount()) / 2;
+    }
+
+    v1 = r.nextDouble();
+    final int newNeuronDensity;
+    if (v1 < .3) {
+      newNeuronDensity = a.getNeuronsDensity();
+    } else if (v1 < .6) {
+      newNeuronDensity = b.getNeuronsDensity();
+    } else {
+      newNeuronDensity = (a.getNeuronsDensity() + b.getNeuronsDensity()) / 2;
+    }
+
+    v1 = r.nextDouble();
+    final ActivationFunction newActivationFunction;
+    if (v1 < .5) {
+      newActivationFunction = a.getActivationFunction();
+    } else {
+      newActivationFunction = a.getActivationFunction();
+    }
+
+    return new Chromosome(newLayerCount, newNeuronDensity, newActivationFunction);
+  }
 
     private static List<ChromosomeRate> challenge(List<Chromosome> population) {
         final List<ChromosomeRate> rates = new ArrayList<ChromosomeRate>(population.size());
@@ -127,53 +160,6 @@ public class App extends Configured implements Tool {
             population.add(new Chromosome(r.nextInt(30)+1, r.nextInt(50)+1, choseActivationFunction(r)));
         }
         return population;
-    }
-
-    private static Chromosome mutation(Chromosome a) {
-        return new Chromosome(a.getLayerCount() + r.nextInt(10) - 5, a.getNeuronsDensity(), a.getActivationFunction());
-    }
-
-    private static Chromosome crossover(Chromosome a, Chromosome b) {
-        final int newLayerCount;
-        double v1 = r.nextDouble();
-        if (v1 < .3) {
-            newLayerCount = a.getLayerCount();
-        } else if (v1 < .6) {
-            newLayerCount = b.getLayerCount();
-        } else {
-            newLayerCount = (a.getLayerCount() + b.getLayerCount()) / 2;
-        }
-
-        v1 = r.nextDouble();
-        final int newNeuronDensity;
-        if (v1 < .3) {
-            newNeuronDensity = a.getNeuronsDensity();
-        } else if (v1 < .6) {
-            newNeuronDensity = b.getNeuronsDensity();
-        } else {
-            newNeuronDensity = (a.getNeuronsDensity() + b.getNeuronsDensity()) / 2;
-        }
-
-        v1 = r.nextDouble();
-        final ActivationFunction newActivationFunction;
-        if (v1 < .5) {
-            newActivationFunction = a.getActivationFunction();
-        } else {
-            newActivationFunction = a.getActivationFunction();
-        }
-
-        return new Chromosome(newLayerCount, newNeuronDensity, newActivationFunction);
-    }
-
-    private static List<Chromosome> filterToNextGeneration(List<ChromosomeRate> rates) {
-        final List<Chromosome> nextPopulation = new ArrayList<Chromosome>(rates.size());
-        nextPopulation.addAll(Collections2.transform(rates.subList(0, (int) Math.sqrt(rates.size())), new Function<ChromosomeRate, Chromosome>() {
-            @Override
-            public Chromosome apply(ChromosomeRate input) {
-                return input.getChromosome();
-            }
-        }));
-        return nextPopulation;
     }
 
     /**
