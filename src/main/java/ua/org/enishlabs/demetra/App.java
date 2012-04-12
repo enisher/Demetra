@@ -1,39 +1,25 @@
 package ua.org.enishlabs.demetra;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Collections2;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
-import org.apache.hadoop.util.Tool;
 import org.encog.engine.network.activation.ActivationBiPolar;
 import org.encog.engine.network.activation.ActivationFunction;
 import org.encog.engine.network.activation.ActivationSigmoid;
 import org.encog.engine.network.activation.ActivationTANH;
 import org.encog.ml.data.basic.BasicMLData;
 import org.encog.neural.networks.BasicNetwork;
-import org.encog.neural.networks.layers.BasicLayer;
 import ua.org.enishlabs.demetra.genetic.*;
 
-import java.io.IOException;
 import java.util.*;
 
-public class App extends Configured implements Tool {
+public class App {
     public static double[][] input = {{0., 0.}, {0., 1.}, {1., 0.}, {1., 1.}};
     public static double[][] ideal = {{0.}, {1.}, {1.}, {0.}};
     private static final int POPULATION_SIZE = 10;
     private static final Random r = new Random();
 
+    private static final PopulationChallenger populationChallenger = new SynchPopulationChallenger();
+
     public static void main(String[] args) throws Exception {
+        GlobalConfig.programArgs = args;
 
         System.out.println("Preparing first generation...");
         List<Chromosome> population = generateFirstPopulation();
@@ -56,11 +42,12 @@ public class App extends Configured implements Tool {
             rates = challenge(population);
             System.out.println("Generation #" + iteration + " challenged");
             prevRate = currentRate;
+
             currentRate = Collections.max(rates).getRate();
+
             System.out.println("Rate: " + currentRate);
+
             iteration++;
-
-
             final ChromosomeRate bestRate = Collections.max(rates);
             final BasicNetwork cachedOrganism = bestRate.getCachedOrganism();
             System.out.println("Result");
@@ -70,8 +57,10 @@ public class App extends Configured implements Tool {
             System.out.println("1 0 = " + cachedOrganism.compute(new BasicMLData(new double[]{1., .0})).getData(0));
             System.out.println("1 1 = " + cachedOrganism.compute(new BasicMLData(new double[]{1., 1.})).getData(0));
         }
-//		final int res = ToolRunner.run(new Configuration(), new App(), args);
-//		System.exit(res);
+    }
+
+    private static List<ChromosomeRate> challenge(List<Chromosome> population) {
+        return populationChallenger.challenge(population);
     }
 
     private static void prepareNextPopulation(List<Chromosome> population, List<ChromosomeRate> rates) {
@@ -128,31 +117,6 @@ public class App extends Configured implements Tool {
     return new Chromosome(newLayerCount, newNeuronDensity, newActivationFunction);
   }
 
-    private static List<ChromosomeRate> challenge(List<Chromosome> population) {
-        final List<ChromosomeRate> rates = new ArrayList<ChromosomeRate>(population.size());
-        for (Chromosome chromosome : population) {
-            System.out.println("Creation organism from " + chromosome);
-            final BasicNetwork network = new BasicNetwork();
-
-            //Add input layer
-            network.addLayer(new BasicLayer(chromosome.getActivationFunction(), true, 2));
-
-            for (int i = 0; i < chromosome.getLayerCount(); i++) {
-                network.addLayer(new BasicLayer(chromosome.getActivationFunction(), true, chromosome.getNeuronsDensity()));
-            }
-
-            //Add output layer
-            network.addLayer(new BasicLayer(chromosome.getActivationFunction(), false, 1));
-
-            network.getStructure().finalizeStructure();
-            network.reset();
-
-            final double error = train(network);
-            rates.add(new ChromosomeRate(chromosome, error, network));
-        }
-        return rates;
-    }
-
     private static List<Chromosome> generateFirstPopulation() {
         final List<Chromosome> population = new ArrayList<Chromosome>();
 
@@ -162,16 +126,6 @@ public class App extends Configured implements Tool {
         return population;
     }
 
-    /**
-     * @param network to train
-     * @return error
-     */
-    private static double train(BasicNetwork network) {
-        return new RateFunction().evaluate(new Trainer().train(network));
-    }
-
-
-
     private static ActivationFunction choseActivationFunction(Random r) {
         final List<? extends ActivationFunction> functions = Arrays.asList(new ActivationTANH(), new ActivationSigmoid(), new ActivationBiPolar());
 
@@ -179,41 +133,4 @@ public class App extends Configured implements Tool {
         return functions.get(v);
     }
 
-    @Override
-    public int run(String[] args) throws Exception {
-        final Configuration conf = getConf();
-        Job job = new Job(conf, "ua.org.enishlabs.demetra");
-        job.setJarByClass(App.class);
-
-        Path in = new Path(args[0]);
-        FileInputFormat.setInputPaths(job, in);
-        Path out = new Path(args[1]);
-        FileOutputFormat.setOutputPath(job, out);
-
-        job.setMapperClass(MapClass.class);
-        job.setReducerClass(Reduce.class);
-
-        job.setInputFormatClass(TextInputFormat.class);
-        job.setOutputFormatClass(TextOutputFormat.class);
-        job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(Text.class);
-
-        System.exit(job.waitForCompletion(true) ? 0 : 1);
-
-        return 0;
-    }
-
-    public static class MapClass extends Mapper<LongWritable, Text, Text, Text> {
-        @Override
-        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
-
-        }
-    }
-
-    public static class Reduce extends Reducer<Text, Text, Text, Text> {
-        @Override
-        protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-
-        }
-    }
 }
