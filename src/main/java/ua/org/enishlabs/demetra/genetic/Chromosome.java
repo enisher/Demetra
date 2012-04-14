@@ -45,4 +45,8 @@ public class Chromosome {
                 ", activationFunction=" + activationFunction +
                 '}';
     }
+
+    public String toStream() {
+        return "Chromosome " + layerCount + " " + neuronsDensity + " " + activationFunction.getClass().getSimpleName();
+    }
 }

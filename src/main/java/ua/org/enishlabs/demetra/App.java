@@ -7,6 +7,7 @@ import org.encog.engine.network.activation.ActivationTANH;
 import org.encog.ml.data.basic.BasicMLData;
 import org.encog.neural.networks.BasicNetwork;
 import ua.org.enishlabs.demetra.genetic.*;
+import ua.org.enishlabs.demetra.genetic.distributed.DistributedPopulationChallenger;
 
 import java.util.*;
 
@@ -16,7 +17,7 @@ public class App {
     private static final int POPULATION_SIZE = 10;
     private static final Random r = new Random();
 
-    private static final PopulationChallenger populationChallenger = new SynchPopulationChallenger();
+    private static final PopulationChallenger populationChallenger = new DistributedPopulationChallenger();
 
     public static void main(String[] args) throws Exception {
         GlobalConfig.programArgs = args;

@@ -15,21 +15,7 @@ public class SynchPopulationChallenger implements PopulationChallenger {
     public List<ChromosomeRate> challenge(List<Chromosome> population) {
         final List<ChromosomeRate> rates = new ArrayList<ChromosomeRate>(population.size());
         for (Chromosome chromosome : population) {
-            System.out.println("Creation organism from " + chromosome);
-            final BasicNetwork network = new BasicNetwork();
-
-            //Add input layer
-            network.addLayer(new BasicLayer(chromosome.getActivationFunction(), true, 2));
-
-            for (int i = 0; i < chromosome.getLayerCount(); i++) {
-                network.addLayer(new BasicLayer(chromosome.getActivationFunction(), true, chromosome.getNeuronsDensity()));
-            }
-
-            //Add output layer
-            network.addLayer(new BasicLayer(chromosome.getActivationFunction(), false, 1));
-
-            network.getStructure().finalizeStructure();
-            network.reset();
+            final BasicNetwork network = new OrganizmBuilder().build(chromosome);
 
             final double error = train(network);
             rates.add(new ChromosomeRate(chromosome, error, network));

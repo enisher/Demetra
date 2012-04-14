@@ -1,5 +1,6 @@
 package ua.org.enishlabs.demetra.genetic;
 
+import org.apache.hadoop.io.Text;
 import org.encog.neural.networks.BasicNetwork;
 
 /**
@@ -42,4 +43,8 @@ public final class ChromosomeRate implements Comparable<ChromosomeRate> {
 	public int compareTo(ChromosomeRate o) {
 		return Double.compare(rate, o.rate);
 	}
+
+    public String toStream() {
+        return "Rate " + chromosome.toStream() + " " + rate;
+    }
 }
