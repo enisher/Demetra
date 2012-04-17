@@ -21,9 +21,7 @@ import ua.org.enishlabs.demetra.GlobalConfig;
 import ua.org.enishlabs.demetra.genetic.*;
 
 import javax.xml.bind.annotation.XmlElementDecl;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.util.List;
 
 /**
@@ -33,14 +31,15 @@ import java.util.List;
 public class DistributedPopulationChallenger extends Configured implements Tool, PopulationChallenger {
 
     private Path in = new Path("temp/in.txt");
-    private Path out = new Path("temp/out.txt");
+    private Path out = new Path("temp/out");
+    private final Configuration fsConfiguration = new Configuration();
 
     @Override
     public List<ChromosomeRate> challenge(List<Chromosome> population) {
         writePopulationToHDFS(population);
 
         try {
-            ToolRunner.run(new Configuration(), this, GlobalConfig.programArgs);
+            ToolRunner.run(fsConfiguration, this, GlobalConfig.programArgs);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -49,7 +48,7 @@ public class DistributedPopulationChallenger extends Configured implements Tool,
 
     private void writePopulationToHDFS(List<Chromosome> population) {
         try {
-            FileSystem fs = FileSystem.get(new Configuration());
+            FileSystem fs = FileSystem.get(fsConfiguration);
             BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(in,true)));
 
             for (Chromosome chromosome : population) {
@@ -63,6 +62,18 @@ public class DistributedPopulationChallenger extends Configured implements Tool,
     }
 
     private List<ChromosomeRate> readRateFromHDFS() {
+        try {
+            final FileSystem fs = FileSystem.get(fsConfiguration);
+
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(out)));
+
+            final String[] split = reader.readLine().split(" ");
+            new ChromosomeRate(new Chromosome(Integer.valueOf(split[2]), Integer.valueOf(split[3]), new ActivationTANH()), Double.valueOf(split[5]));
+
+            reader.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         return null;
     }
 
