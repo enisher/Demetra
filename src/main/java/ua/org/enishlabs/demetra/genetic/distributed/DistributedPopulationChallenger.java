@@ -72,7 +72,7 @@ public class DistributedPopulationChallenger extends Configured implements Tool,
                     final BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(path)));
 
                     final String[] split = reader.readLine().split(" ");
-                    rates.add( new ChromosomeRate(new Chromosome(Integer.valueOf(split[2]), Integer.valueOf(split[3]), new ActivationTANH()), Double.valueOf(split[5])));
+                    rates.add( new ChromosomeRate(new Chromosome(Integer.valueOf(split[2]), Integer.valueOf(split[3]), ActivationFunctionFactory.resolveFunctionByName(split[4])), Double.valueOf(split[5])));
 
                     reader.close();
                 }
@@ -105,6 +105,7 @@ public class DistributedPopulationChallenger extends Configured implements Tool,
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(Text.class);
 
+        job.waitForCompletion(true);
         return 0;
     }
 
@@ -117,7 +118,7 @@ public class DistributedPopulationChallenger extends Configured implements Tool,
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             final String[] params = value.toString().split(" ");
 
-            final Chromosome chromosome = new Chromosome(Integer.valueOf(params[1]), Integer.valueOf(params[2]), new ActivationTANH());
+            final Chromosome chromosome = new Chromosome(Integer.valueOf(params[1]), Integer.valueOf(params[2]), ActivationFunctionFactory.resolveFunctionByName(params[3]));
             final BasicNetwork network = organizmBuilder.build(chromosome);
 
             final double error = trainer.train(network);

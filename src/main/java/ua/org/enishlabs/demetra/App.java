@@ -50,13 +50,13 @@ public class App {
 
             iteration++;
             final ChromosomeRate bestRate = Collections.max(rates);
-            final BasicNetwork cachedOrganism = bestRate.getCachedOrganism();
+//            final BasicNetwork cachedOrganism = bestRate.getCachedOrganism();
             System.out.println("Result");
             System.out.println("Best chromosome: " + bestRate.getChromosome());
-            System.out.println("0 0 = " + cachedOrganism.compute(new BasicMLData(new double[]{.0, .0})).getData(0));
-            System.out.println("0 1 = " + cachedOrganism.compute(new BasicMLData(new double[]{.0, 1.})).getData(0));
-            System.out.println("1 0 = " + cachedOrganism.compute(new BasicMLData(new double[]{1., .0})).getData(0));
-            System.out.println("1 1 = " + cachedOrganism.compute(new BasicMLData(new double[]{1., 1.})).getData(0));
+//            System.out.println("0 0 = " + cachedOrganism.compute(new BasicMLData(new double[]{.0, .0})).getData(0));
+//            System.out.println("0 1 = " + cachedOrganism.compute(new BasicMLData(new double[]{.0, 1.})).getData(0));
+//            System.out.println("1 0 = " + cachedOrganism.compute(new BasicMLData(new double[]{1., .0})).getData(0));
+//            System.out.println("1 1 = " + cachedOrganism.compute(new BasicMLData(new double[]{1., 1.})).getData(0));
         }
     }
 
@@ -122,16 +122,11 @@ public class App {
         final List<Chromosome> population = new ArrayList<Chromosome>();
 
         for (int i = 0; i < POPULATION_SIZE; i++) {
-            population.add(new Chromosome(r.nextInt(30)+1, r.nextInt(50)+1, choseActivationFunction(r)));
+            population.add(new Chromosome(r.nextInt(30)+1, r.nextInt(50)+1, ActivationFunctionFactory.choseActivationFunction(r)));
         }
         return population;
     }
 
-    private static ActivationFunction choseActivationFunction(Random r) {
-        final List<? extends ActivationFunction> functions = Arrays.asList(new ActivationTANH(), new ActivationSigmoid(), new ActivationBiPolar());
 
-        final int v = r.nextInt(functions.size());
-        return functions.get(v);
-    }
 
 }
