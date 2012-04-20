@@ -3,6 +3,7 @@ package ua.org.enishlabs.demetra.genetic.distributed;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -20,8 +21,8 @@ import org.encog.neural.networks.BasicNetwork;
 import ua.org.enishlabs.demetra.GlobalConfig;
 import ua.org.enishlabs.demetra.genetic.*;
 
-import javax.xml.bind.annotation.XmlElementDecl;
 import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -49,7 +50,7 @@ public class DistributedPopulationChallenger extends Configured implements Tool,
     private void writePopulationToHDFS(List<Chromosome> population) {
         try {
             FileSystem fs = FileSystem.get(fsConfiguration);
-            BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(in,true)));
+            BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(in, true)));
 
             for (Chromosome chromosome : population) {
                 br.write(chromosome.toStream() + "\n");
@@ -63,18 +64,28 @@ public class DistributedPopulationChallenger extends Configured implements Tool,
 
     private List<ChromosomeRate> readRateFromHDFS() {
         try {
+            final List<ChromosomeRate> rates = new ArrayList<ChromosomeRate>();
+
             final FileSystem fs = FileSystem.get(fsConfiguration);
+            for (Path path : FileUtil.stat2Paths(fs.listStatus(out))) {
+                if (path.getName().startsWith("part-r-")) {
+                    final BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(path)));
 
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(out)));
+                    final String[] split = reader.readLine().split(" ");
+                    rates.add( new ChromosomeRate(new Chromosome(Integer.valueOf(split[2]), Integer.valueOf(split[3]), new ActivationTANH()), Double.valueOf(split[5])));
 
-            final String[] split = reader.readLine().split(" ");
-            new ChromosomeRate(new Chromosome(Integer.valueOf(split[2]), Integer.valueOf(split[3]), new ActivationTANH()), Double.valueOf(split[5]));
+                    reader.close();
+                }
+            }
 
-            reader.close();
+            fs.delete(out, true);
+            fs.delete(in, false);
+            fs.close();
+
+            return rates;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return null;
     }
 
     @Override
@@ -93,8 +104,6 @@ public class DistributedPopulationChallenger extends Configured implements Tool,
         job.setOutputFormatClass(TextOutputFormat.class);
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(Text.class);
-
-        System.exit(job.waitForCompletion(true) ? 0 : 1);
 
         return 0;
     }
