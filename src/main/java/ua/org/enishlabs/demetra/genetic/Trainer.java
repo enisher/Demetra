@@ -11,8 +11,14 @@ import ua.org.enishlabs.demetra.App;
  * Date: 07.04.12
  */
 public class Trainer {
+    private final BasicMLDataSet trainSet;
+
+    public Trainer(BasicMLDataSet trainSet) {
+        this.trainSet = trainSet;
+    }
+
     public double train(BasicNetwork network) {
-        final Train train = new Backpropagation(network, new BasicMLDataSet(App.input, App.ideal));
+        final Train train = new Backpropagation(network, trainSet);
 
         int iteration = 0;
 

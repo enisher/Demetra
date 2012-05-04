@@ -1,7 +1,9 @@
 package ua.org.enishlabs.demetra.genetic;
 
+import org.encog.ml.data.basic.BasicMLDataSet;
 import org.encog.neural.networks.BasicNetwork;
 import org.encog.neural.networks.layers.BasicLayer;
+import ua.org.enishlabs.demetra.App;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +30,13 @@ public class SynchPopulationChallenger implements PopulationChallenger {
      * @return error
      */
     private static double train(BasicNetwork network) {
-        return new RateFunction().evaluate(new Trainer().train(network));
+        final BasicMLDataSet trainSet = readTrainSetFromHDFS();
+        return new RateFunction().evaluate(new Trainer(trainSet).train(network));
+    }
+
+    private static BasicMLDataSet readTrainSetFromHDFS() {
+        final double[][] input = App.input;
+        final double[][] ideal = App.ideal;
+        return new BasicMLDataSet(input, ideal);
     }
 }

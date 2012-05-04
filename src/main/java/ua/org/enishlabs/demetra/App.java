@@ -1,13 +1,16 @@
 package ua.org.enishlabs.demetra;
 
+import org.apache.hadoop.io.TwoDArrayWritable;
 import org.encog.engine.network.activation.ActivationBiPolar;
 import org.encog.engine.network.activation.ActivationFunction;
 import org.encog.engine.network.activation.ActivationSigmoid;
 import org.encog.engine.network.activation.ActivationTANH;
 import org.encog.ml.data.basic.BasicMLData;
+import org.encog.ml.data.basic.BasicMLDataSet;
 import org.encog.neural.networks.BasicNetwork;
 import ua.org.enishlabs.demetra.genetic.*;
 import ua.org.enishlabs.demetra.genetic.distributed.DistributedPopulationChallenger;
+import ua.org.enishlabs.demetra.genetic.distributed.TrainingSetProvider;
 
 import java.util.*;
 
@@ -16,11 +19,14 @@ public class App {
     public static double[][] ideal = {{0.}, {1.}, {1.}, {0.}};
     private static final int POPULATION_SIZE = 10;
     private static final Random r = new Random();
+    private static final TrainingSetProvider TRAINING_SET_PROVIDER = new TrainingSetProvider();
 
     private static final PopulationChallenger populationChallenger = new DistributedPopulationChallenger();
 
     public static void main(String[] args) throws Exception {
         GlobalConfig.programArgs = args;
+
+        prepareTrainingSet();
 
         System.out.println("Preparing first generation...");
         List<Chromosome> population = generateFirstPopulation();
@@ -50,14 +56,21 @@ public class App {
 
             iteration++;
             final ChromosomeRate bestRate = Collections.max(rates);
-//            final BasicNetwork cachedOrganism = bestRate.getCachedOrganism();
             System.out.println("Result");
             System.out.println("Best chromosome: " + bestRate.getChromosome());
+//            final BasicNetwork cachedOrganism = bestRate.getCachedOrganism();
 //            System.out.println("0 0 = " + cachedOrganism.compute(new BasicMLData(new double[]{.0, .0})).getData(0));
 //            System.out.println("0 1 = " + cachedOrganism.compute(new BasicMLData(new double[]{.0, 1.})).getData(0));
 //            System.out.println("1 0 = " + cachedOrganism.compute(new BasicMLData(new double[]{1., .0})).getData(0));
 //            System.out.println("1 1 = " + cachedOrganism.compute(new BasicMLData(new double[]{1., 1.})).getData(0));
         }
+    }
+
+    private static void prepareTrainingSet() {
+        double[][] input = {{0., 0.}, {0., 1.}, {1., 0.}, {1., 1.}};
+        double[][] ideal = {{0.}, {1.}, {1.}, {0.}};
+        final BasicMLDataSet dataSet = new BasicMLDataSet(input, ideal);
+        TRAINING_SET_PROVIDER.save(dataSet);
     }
 
     private static List<ChromosomeRate> challenge(List<Chromosome> population) {

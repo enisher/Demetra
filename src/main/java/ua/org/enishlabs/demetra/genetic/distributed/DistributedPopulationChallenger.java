@@ -17,7 +17,9 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.encog.engine.network.activation.ActivationTANH;
+import org.encog.ml.data.basic.BasicMLDataSet;
 import org.encog.neural.networks.BasicNetwork;
+import ua.org.enishlabs.demetra.App;
 import ua.org.enishlabs.demetra.GlobalConfig;
 import ua.org.enishlabs.demetra.genetic.*;
 
@@ -34,6 +36,7 @@ public class DistributedPopulationChallenger extends Configured implements Tool,
     private Path in = new Path("temp/in.txt");
     private Path out = new Path("temp/out");
     private final Configuration fsConfiguration = new Configuration();
+    private static final TrainingSetProvider trainingSetProvider = new TrainingSetProvider();
 
     @Override
     public List<ChromosomeRate> challenge(List<Chromosome> population) {
@@ -111,7 +114,13 @@ public class DistributedPopulationChallenger extends Configured implements Tool,
 
     public static class MapClass extends Mapper<LongWritable, Text, Text, Text> {
 
-        private static final Trainer trainer = new Trainer();
+        private static final Trainer trainer;
+
+        static {
+            final BasicMLDataSet dataSet = trainingSetProvider.load();
+            trainer = new Trainer(dataSet);
+        }
+
         private final OrganizmBuilder organizmBuilder = new OrganizmBuilder();
 
         @Override
