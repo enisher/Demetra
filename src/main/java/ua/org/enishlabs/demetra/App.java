@@ -137,13 +137,13 @@ public class App {
         final List<Chromosome> population = new ArrayList<Chromosome>();
 
         for (int i = 0; i < POPULATION_SIZE; i++) {
-            final int layerCount = r.nextInt(30) + 1;
+            final int layerCount = r.nextInt(20) + 2;
             final ArrayList<ActivationFunction> activationFunctions = new ArrayList<ActivationFunction>();
             for (int j = 0; j < layerCount; j++) {
                 activationFunctions.add(ActivationFunctionFactory.choseActivationFunction(r));
             }
 
-            population.add(new Chromosome(layerCount, r.nextInt(50) + 1, activationFunctions));
+            population.add(new Chromosome(layerCount, r.nextInt(30) + 3, activationFunctions));
         }
         return population;
     }

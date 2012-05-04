@@ -77,7 +77,8 @@ public class DistributedPopulationChallenger extends Configured implements Tool,
 
                     final String[] split = reader.readLine().split(" ");
                     final ArrayList<ActivationFunction> activationFunctions = new ArrayList<ActivationFunction>();
-                    for (int i = 6; i < split.length; i++) {
+                    final Integer n = Integer.valueOf(split[5]);
+                    for (int i = 6; i < n+6; i++) {
                         activationFunctions.add(ActivationFunctionFactory.resolveFunctionByName(split[i]));
                     }
                     rates.add( new ChromosomeRate(new Chromosome(Integer.valueOf(split[3]), Integer.valueOf(split[4]), activationFunctions), Double.valueOf(split[1])));

@@ -28,8 +28,8 @@ public class OrganizmBuilder {
         //Add input layer
         network.addLayer(new BasicLayer(activationFunctions.get(0), true, inputsCount));
 
-        for (int i = 0; i < chromosome.getLayerCount(); i++) {
-            network.addLayer(new BasicLayer(activationFunctions.get(i+1), true, chromosome.getNeuronsDensity()));
+        for (int i = 1; i < chromosome.getLayerCount()-1; i++) {
+            network.addLayer(new BasicLayer(activationFunctions.get(i), true, chromosome.getNeuronsDensity()));
         }
 
         //Add output layer
