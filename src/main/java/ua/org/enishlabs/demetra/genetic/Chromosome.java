@@ -6,6 +6,7 @@ import org.encog.engine.network.activation.ActivationFunction;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * @author EniSh
@@ -14,15 +15,15 @@ import java.io.IOException;
 public class Chromosome {
 	private int layerCount;
 	private int neuronsDensity;
-	private ActivationFunction activationFunction;
+    private List<ActivationFunction> activationFunctions;
 
 	public Chromosome() {
 	}
 
-	public Chromosome(int layerCount, int neuronsDensity, ActivationFunction activationFunction) {
+	public Chromosome(int layerCount, int neuronsDensity, List<ActivationFunction> activationFunctions) {
 		this.layerCount = layerCount;
 		this.neuronsDensity = neuronsDensity;
-		this.activationFunction = activationFunction;
+		this.activationFunctions = activationFunctions;
 	}
 
 	public int getLayerCount() {
@@ -33,20 +34,26 @@ public class Chromosome {
 		return neuronsDensity;
 	}
 
-	public ActivationFunction getActivationFunction() {
-		return activationFunction.clone();
-	}
+    public List<ActivationFunction> getActivationFunctions() {
+        return activationFunctions;
+    }
 
     @Override
     public String toString() {
         return "Chromosome{" +
                 "layerCount=" + layerCount +
                 ", neuronsDensity=" + neuronsDensity +
-                ", activationFunction=" + activationFunction +
+                ", activationFunctions=" + activationFunctions +
                 '}';
     }
 
     public String toStream() {
-        return "Chromosome " + layerCount + " " + neuronsDensity + " " + activationFunction.getClass().getSimpleName();
+        final StringBuilder sb = new StringBuilder( "Chromosome " + layerCount + " " + neuronsDensity + " ");
+        sb.append(activationFunctions.size()).append(" ");
+        for (ActivationFunction activationFunction : activationFunctions) {
+            sb.append(activationFunction.getClass().getSimpleName()).append(" ");
+        }
+
+        return sb.toString();
     }
 }

@@ -1,26 +1,20 @@
 package ua.org.enishlabs.demetra;
 
-import org.apache.hadoop.io.TwoDArrayWritable;
-import org.encog.engine.network.activation.ActivationBiPolar;
 import org.encog.engine.network.activation.ActivationFunction;
-import org.encog.engine.network.activation.ActivationSigmoid;
-import org.encog.engine.network.activation.ActivationTANH;
-import org.encog.ml.data.basic.BasicMLData;
 import org.encog.ml.data.basic.BasicMLDataSet;
-import org.encog.neural.networks.BasicNetwork;
 import ua.org.enishlabs.demetra.genetic.*;
 import ua.org.enishlabs.demetra.genetic.distributed.DistributedPopulationChallenger;
 import ua.org.enishlabs.demetra.genetic.distributed.TrainingSetProvider;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 
 public class App {
-    public static double[][] input = {{0., 0.}, {0., 1.}, {1., 0.}, {1., 1.}};
-    public static double[][] ideal = {{0.}, {1.}, {1.}, {0.}};
     private static final int POPULATION_SIZE = 10;
     private static final Random r = new Random();
     private static final TrainingSetProvider TRAINING_SET_PROVIDER = new TrainingSetProvider();
-
     private static final PopulationChallenger populationChallenger = new DistributedPopulationChallenger();
 
     public static void main(String[] args) throws Exception {
@@ -95,51 +89,64 @@ public class App {
         }
     }
 
-  private static Chromosome mutation(Chromosome a) {
-    return new Chromosome(a.getLayerCount() + r.nextInt(10) - 5, a.getNeuronsDensity(), a.getActivationFunction());
-  }
-
-  private static Chromosome crossover(Chromosome a, Chromosome b) {
-    final int newLayerCount;
-    double v1 = r.nextDouble();
-    if (v1 < .3) {
-      newLayerCount = a.getLayerCount();
-    } else if (v1 < .6) {
-      newLayerCount = b.getLayerCount();
-    } else {
-      newLayerCount = (a.getLayerCount() + b.getLayerCount()) / 2;
+    private static Chromosome mutation(Chromosome a) {
+        return new Chromosome(a.getLayerCount() + r.nextInt(10) - 5, a.getNeuronsDensity(), a.getActivationFunctions());
     }
 
-    v1 = r.nextDouble();
-    final int newNeuronDensity;
-    if (v1 < .3) {
-      newNeuronDensity = a.getNeuronsDensity();
-    } else if (v1 < .6) {
-      newNeuronDensity = b.getNeuronsDensity();
-    } else {
-      newNeuronDensity = (a.getNeuronsDensity() + b.getNeuronsDensity()) / 2;
-    }
+    private static Chromosome crossover(Chromosome a, Chromosome b) {
+        final int newLayerCount;
+        double v1 = r.nextDouble();
+        if (v1 < .3) {
+            newLayerCount = a.getLayerCount();
+        } else if (v1 < .6) {
+            newLayerCount = b.getLayerCount();
+        } else {
+            newLayerCount = (a.getLayerCount() + b.getLayerCount()) / 2;
+        }
 
-    v1 = r.nextDouble();
-    final ActivationFunction newActivationFunction;
-    if (v1 < .5) {
-      newActivationFunction = a.getActivationFunction();
-    } else {
-      newActivationFunction = a.getActivationFunction();
-    }
+        v1 = r.nextDouble();
+        final int newNeuronDensity;
+        if (v1 < .3) {
+            newNeuronDensity = a.getNeuronsDensity();
+        } else if (v1 < .6) {
+            newNeuronDensity = b.getNeuronsDensity();
+        } else {
+            newNeuronDensity = (a.getNeuronsDensity() + b.getNeuronsDensity()) / 2;
+        }
 
-    return new Chromosome(newLayerCount, newNeuronDensity, newActivationFunction);
-  }
+        final List<ActivationFunction> activationFunctions = new ArrayList<ActivationFunction>();
+        for (int i = 0; i < newLayerCount; i++) {
+            if (i < a.getLayerCount() && i < b.getLayerCount()) {
+                v1 = r.nextDouble();
+                if (v1 < .5) {
+                    activationFunctions.add(a.getActivationFunctions().get(i));
+                } else {
+                    activationFunctions.add(b.getActivationFunctions().get(i));
+                }
+            } else if (i < a.getLayerCount()) {
+                activationFunctions.add(a.getActivationFunctions().get(i));
+            } else {
+                activationFunctions.add(b.getActivationFunctions().get(i));
+            }
+        }
+
+        return new Chromosome(newLayerCount, newNeuronDensity, activationFunctions);
+    }
 
     private static List<Chromosome> generateFirstPopulation() {
         final List<Chromosome> population = new ArrayList<Chromosome>();
 
         for (int i = 0; i < POPULATION_SIZE; i++) {
-            population.add(new Chromosome(r.nextInt(30)+1, r.nextInt(50)+1, ActivationFunctionFactory.choseActivationFunction(r)));
+            final int layerCount = r.nextInt(30) + 1;
+            final ArrayList<ActivationFunction> activationFunctions = new ArrayList<ActivationFunction>();
+            for (int j = 0; j < layerCount; j++) {
+                activationFunctions.add(ActivationFunctionFactory.choseActivationFunction(r));
+            }
+
+            population.add(new Chromosome(layerCount, r.nextInt(50) + 1, activationFunctions));
         }
         return population;
     }
-
 
 
 }

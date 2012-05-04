@@ -16,6 +16,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.encog.engine.network.activation.ActivationFunction;
 import org.encog.engine.network.activation.ActivationTANH;
 import org.encog.ml.data.basic.BasicMLDataSet;
 import org.encog.neural.networks.BasicNetwork;
@@ -75,7 +76,11 @@ public class DistributedPopulationChallenger extends Configured implements Tool,
                     final BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(path)));
 
                     final String[] split = reader.readLine().split(" ");
-                    rates.add( new ChromosomeRate(new Chromosome(Integer.valueOf(split[2]), Integer.valueOf(split[3]), ActivationFunctionFactory.resolveFunctionByName(split[4])), Double.valueOf(split[5])));
+                    final ArrayList<ActivationFunction> activationFunctions = new ArrayList<ActivationFunction>();
+                    for (int i = 6; i < split.length; i++) {
+                        activationFunctions.add(ActivationFunctionFactory.resolveFunctionByName(split[i]));
+                    }
+                    rates.add( new ChromosomeRate(new Chromosome(Integer.valueOf(split[3]), Integer.valueOf(split[4]), activationFunctions), Double.valueOf(split[1])));
 
                     reader.close();
                 }
@@ -115,19 +120,23 @@ public class DistributedPopulationChallenger extends Configured implements Tool,
     public static class MapClass extends Mapper<LongWritable, Text, Text, Text> {
 
         private static final Trainer trainer;
+        private static final OrganizmBuilder organizmBuilder;
 
         static {
             final BasicMLDataSet dataSet = trainingSetProvider.load();
             trainer = new Trainer(dataSet);
+            organizmBuilder = new OrganizmBuilder(dataSet.getInputSize(), dataSet.getIdealSize());
         }
-
-        private final OrganizmBuilder organizmBuilder = new OrganizmBuilder();
 
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             final String[] params = value.toString().split(" ");
 
-            final Chromosome chromosome = new Chromosome(Integer.valueOf(params[1]), Integer.valueOf(params[2]), ActivationFunctionFactory.resolveFunctionByName(params[3]));
+            final ArrayList<ActivationFunction> activationFunctions = new ArrayList<ActivationFunction>();
+            for (int i = 4; i < params.length; i++) {
+                activationFunctions.add(ActivationFunctionFactory.resolveFunctionByName(params[i]));
+            }
+            final Chromosome chromosome = new Chromosome(Integer.valueOf(params[1]), Integer.valueOf(params[2]), activationFunctions);
             final BasicNetwork network = organizmBuilder.build(chromosome);
 
             final double error = trainer.train(network);

@@ -45,6 +45,6 @@ public final class ChromosomeRate implements Comparable<ChromosomeRate> {
 	}
 
     public String toStream() {
-        return "Rate " + chromosome.toStream() + " " + rate;
+        return "Rate " + rate + " " + chromosome.toStream();
     }
 }
