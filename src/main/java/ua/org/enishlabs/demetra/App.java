@@ -6,10 +6,9 @@ import ua.org.enishlabs.demetra.genetic.*;
 import ua.org.enishlabs.demetra.genetic.distributed.DistributedPopulationChallenger;
 import ua.org.enishlabs.demetra.genetic.distributed.TrainingSetProvider;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.*;
 
 public class App {
     private static final int POPULATION_SIZE = 10;
@@ -20,10 +19,10 @@ public class App {
     public static void main(String[] args) throws Exception {
         GlobalConfig.programArgs = args;
 
-        prepareTrainingSet();
+        final BasicMLDataSet trainingSet = prepareTrainingSet(args[0]);
 
         System.out.println("Preparing first generation...");
-        List<Chromosome> population = generateFirstPopulation();
+        List<Chromosome> population = generateFirstPopulation(trainingSet);
         System.out.println("First generation has been prepared.");
 
         System.out.println("Start challenging generation #0");
@@ -60,11 +59,39 @@ public class App {
         }
     }
 
-    private static void prepareTrainingSet() {
-        double[][] input = {{0., 0.}, {0., 1.}, {1., 0.}, {1., 1.}};
-        double[][] ideal = {{0.}, {1.}, {1.}, {0.}};
+    private static BasicMLDataSet prepareTrainingSet(String pathToDataFile) {
+//        double[][] input = {{0., 0.}, {0., 1.}, {1., 0.}, {1., 1.}};
+//        double[][] ideal = {{0.}, {1.}, {1.}, {0.}};
+
+        Scanner in = null;
+        try {
+            in = new Scanner(new File(pathToDataFile));
+        } catch (FileNotFoundException e) {
+            throw new IllegalArgumentException(e);
+        }
+        in.useLocale(new Locale("RU"));
+
+        final int N = in.nextInt();
+
+        final int inputSize = in.nextInt();
+        double[][] input = new double[N][inputSize];
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < inputSize; j++) {
+                input[i][j] = in.nextDouble();
+            }
+        }
+
+        final int outputSize = in.nextInt();
+        double[][] ideal = new double[N][outputSize];
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < outputSize; j++) {
+                ideal[i][j] = in.nextDouble();
+            }
+        }
+        
         final BasicMLDataSet dataSet = new BasicMLDataSet(input, ideal);
         TRAINING_SET_PROVIDER.save(dataSet);
+        return dataSet;
     }
 
     private static List<ChromosomeRate> challenge(List<Chromosome> population) {
@@ -90,7 +117,21 @@ public class App {
     }
 
     private static Chromosome mutation(Chromosome a) {
-        return new Chromosome(a.getLayerCount() + r.nextInt(10) - 5, a.getNeuronsDensity(), a.getActivationFunctions());
+        final int dLC = r.nextInt(10) - 5;
+        final List<ActivationFunction> activationFunctions = new ArrayList<ActivationFunction>(a.getActivationFunctions());
+        for (int i = 0; i < activationFunctions.size(); i++) {
+            if (r.nextDouble() < .05) {
+                activationFunctions.set(i, ActivationFunctionFactory.choseActivationFunction(r));
+            }
+        }
+        if (dLC > 0) {
+            activationFunctions.add(ActivationFunctionFactory.choseActivationFunction(r));
+        } else {
+            for (int i = 0, j = activationFunctions.size() - 1; i < -dLC; i++, j--) {
+                activationFunctions.remove(j);
+            }
+        }
+        return new Chromosome(a.getLayerCount() + dLC, a.getNeuronsDensity() + r.nextInt(10) - 5, activationFunctions);
     }
 
     private static Chromosome crossover(Chromosome a, Chromosome b) {
@@ -133,7 +174,7 @@ public class App {
         return new Chromosome(newLayerCount, newNeuronDensity, activationFunctions);
     }
 
-    private static List<Chromosome> generateFirstPopulation() {
+    private static List<Chromosome> generateFirstPopulation(BasicMLDataSet trainingSet) {
         final List<Chromosome> population = new ArrayList<Chromosome>();
 
         for (int i = 0; i < POPULATION_SIZE; i++) {
@@ -143,7 +184,14 @@ public class App {
                 activationFunctions.add(ActivationFunctionFactory.choseActivationFunction(r));
             }
 
-            population.add(new Chromosome(layerCount, r.nextInt(30) + 3, activationFunctions));
+            int ll = Math.round(trainingSet.getRecordCount() / 10 - trainingSet.getIdealSize() - trainingSet.getInputSize());
+            int lh = Math.round(trainingSet.getRecordCount() / 2 - trainingSet.getIdealSize() - trainingSet.getInputSize());
+            if (ll < 0) {
+                ll = 20;
+                lh = 50;
+            }
+
+            population.add(new Chromosome(layerCount, r.nextInt(lh - ll) + ll, activationFunctions));
         }
         return population;
     }
