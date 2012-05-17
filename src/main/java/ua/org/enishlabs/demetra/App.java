@@ -8,6 +8,7 @@ import ua.org.enishlabs.demetra.genetic.distributed.TrainingSetProvider;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.util.*;
 
 public class App {
@@ -25,11 +26,16 @@ public class App {
         List<Chromosome> population = generateFirstPopulation(trainingSet);
         System.out.println("First generation has been prepared.");
 
+        final long startTimestamp = System.currentTimeMillis();
+
         System.out.println("Start challenging generation #0");
         List<ChromosomeRate> rates = challenge(population);
         System.out.println("Generation #0 challenged");
         double currentRate = Collections.max(rates).getRate();
         System.out.println("Rate: " + currentRate);
+
+        final FileWriter writer = new FileWriter(new File(args[1]));
+        writer.write((System.currentTimeMillis() - startTimestamp) + " " + currentRate + "\n");
 
         int iteration = 1;
         double prevRate = Double.NEGATIVE_INFINITY;
@@ -51,12 +57,15 @@ public class App {
             final ChromosomeRate bestRate = Collections.max(rates);
             System.out.println("Result");
             System.out.println("Best chromosome: " + bestRate.getChromosome());
+            writer.write((System.currentTimeMillis() - startTimestamp) + " " + currentRate + "\n");
+
 //            final BasicNetwork cachedOrganism = bestRate.getCachedOrganism();
 //            System.out.println("0 0 = " + cachedOrganism.compute(new BasicMLData(new double[]{.0, .0})).getData(0));
 //            System.out.println("0 1 = " + cachedOrganism.compute(new BasicMLData(new double[]{.0, 1.})).getData(0));
 //            System.out.println("1 0 = " + cachedOrganism.compute(new BasicMLData(new double[]{1., .0})).getData(0));
 //            System.out.println("1 1 = " + cachedOrganism.compute(new BasicMLData(new double[]{1., 1.})).getData(0));
         }
+        writer.close();
     }
 
     private static BasicMLDataSet prepareTrainingSet(String pathToDataFile) {
@@ -88,7 +97,7 @@ public class App {
                 ideal[i][j] = in.nextDouble();
             }
         }
-        
+
         final BasicMLDataSet dataSet = new BasicMLDataSet(input, ideal);
         TRAINING_SET_PROVIDER.save(dataSet);
         return dataSet;
