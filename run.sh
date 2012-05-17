@@ -1,1 +1,1 @@
-/cygdrive/c/JavaTools/hadoop-0.23.0/bin/hadoop jar target/Demetra-1.0-jar-with-dependencies.jar ua.org.enishlabs.demetra.App learningset.txt
+/cygdrive/c/JavaTools/hadoop-0.23.0/bin/hadoop jar target/Demetra-1.0-jar-with-dependencies.jar ua.org.enishlabs.demetra.App learningset.txt log.txt
