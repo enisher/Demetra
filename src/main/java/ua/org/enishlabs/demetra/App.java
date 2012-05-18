@@ -126,7 +126,11 @@ public class App {
     }
 
     private static Chromosome mutation(Chromosome a) {
-        final int dLC = r.nextInt(10) - 5;
+        int dLC = r.nextInt(10) - 5;
+        if (a.getLayerCount() + dLC <= 2) {
+            dLC = a.getLayerCount() - 2; // 2 is a minimal possible layer count
+        }
+
         final List<ActivationFunction> activationFunctions = new ArrayList<ActivationFunction>(a.getActivationFunctions());
         for (int i = 0; i < activationFunctions.size(); i++) {
             if (r.nextDouble() < .05) {
